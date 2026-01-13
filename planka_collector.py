@@ -117,16 +117,19 @@ def handle_webhook():
         conn.commit()
         conn.close()
 
-        # ========= 企业微信推送 (带过滤) =========
-        # 配置区
-        WECOM_WEBHOOK = os.environ.get('WECOM_WEBHOOK', 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=04113332-f1c3-482b-9cd3-83ba7d5e99ef')
-        ALLOWED_BOARDS = ['EP']  # 只推送这些看板
+        # ========= 企业微信推送 (多看板独立推送) =========
+        # 配置区: 每个看板对应自己的群机器人
+        BOARD_WEBHOOKS = {
+            'EP': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=04113332-f1c3-482b-9cd3-83ba7d5e99ef',
+            'MTN': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=99e5fbfc-e738-409c-b855-38907de945e3',
+        }
         ALLOWED_TYPES = ['Card Moved', 'Card Created']  # 只推送这些类型
         
-        # 判断是否需要推送
-        should_push = (board_name in ALLOWED_BOARDS) and (event_type in ALLOWED_TYPES)
+        # 判断是否需要推送 (看板在映射表中 且 类型符合)
+        webhook_url = BOARD_WEBHOOKS.get(board_name)
+        should_push = (webhook_url is not None) and (event_type in ALLOWED_TYPES)
         
-        if should_push and WECOM_WEBHOOK:
+        if should_push:
             import requests
             
             # 翻译事件类型 (使用更专业的图标)
@@ -159,13 +162,13 @@ def handle_webhook():
                 if link_match:
                     content += f'\n\n[📎 点击查看详情]({link_match.group(1)})'
             
-            # 发送到企业微信
+            # 发送到企业微信 (使用该看板对应的机器人)
             try:
-                resp = requests.post(WECOM_WEBHOOK, json={
+                resp = requests.post(webhook_url, json={
                     "msgtype": "markdown",
                     "markdown": {"content": content}
                 }, timeout=5)
-                print(f"📤 企业微信推送: {resp.status_code}")
+                print(f"📤 企业微信推送 [{board_name}]: {resp.status_code}")
             except Exception as e:
                 print(f"⚠️ 企业微信推送失败: {e}")
 
