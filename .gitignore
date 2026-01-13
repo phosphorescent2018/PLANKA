@@ -1,0 +1,19 @@
+# 本地测试工具
+cpolar.exe
+
+# 数据库文件 (云端会自动创建)
+*.db
+
+# 旧版/临时脚本
+webhook_receiver.py
+
+# Planka 源码 (仅分析用)
+planka-2.0.0-rc.4/
+
+# Docker 配置 (本项目不用)
+docker/
+docker-compose.yml
+
+# Python 缓存
+__pycache__/
+*.pyc
