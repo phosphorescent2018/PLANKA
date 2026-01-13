@@ -117,6 +117,57 @@ def handle_webhook():
         conn.commit()
         conn.close()
 
+        # ========= 企业微信推送 (带过滤) =========
+        # 配置区
+        WECOM_WEBHOOK = os.environ.get('WECOM_WEBHOOK', 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=04113332-f1c3-482b-9cd3-83ba7d5e99ef')
+        ALLOWED_BOARDS = ['EP']  # 只推送这些看板
+        ALLOWED_TYPES = ['Card Moved', 'Card Created']  # 只推送这些类型
+        
+        # 判断是否需要推送
+        should_push = (board_name in ALLOWED_BOARDS) and (event_type in ALLOWED_TYPES)
+        
+        if should_push and WECOM_WEBHOOK:
+            import requests
+            
+            # 翻译事件类型
+            type_cn = {
+                'Card Moved': '📋 卡片移动',
+                'Card Created': '✨ 卡片创建',
+                'New Comment': '💬 新评论',
+                'You Were Added to Card': '👤 被添加到卡片'
+            }.get(event_type, event_type)
+            
+            # 构建 Markdown 消息
+            if event_type == 'Card Moved':
+                content = f'''{type_cn}
+> 卡片: <font color="info">{item_name}</font>
+> 操作人: {user_name}
+> 看板: {board_name}
+> 流转: <font color="warning">{from_list} → {to_list}</font>'''
+            else:
+                content = f'''{type_cn}
+> 卡片: <font color="info">{item_name}</font>
+> 操作人: {user_name}
+> 看板: {board_name}'''
+            
+            # 如果有卡片链接，添加链接
+            raw = json.loads(json.dumps(data))
+            if 'message' in raw:
+                import re as regex
+                link_match = regex.search(r'\((https?://[^)]+)\)', raw.get('message', ''))
+                if link_match:
+                    content += f'\n\n[🔗 点击查看卡片]({link_match.group(1)})'
+            
+            # 发送到企业微信
+            try:
+                resp = requests.post(WECOM_WEBHOOK, json={
+                    "msgtype": "markdown",
+                    "markdown": {"content": content}
+                }, timeout=5)
+                print(f"📤 企业微信推送: {resp.status_code}")
+            except Exception as e:
+                print(f"⚠️ 企业微信推送失败: {e}")
+
         # 打印详细日志
         print(f"\n[📝 新记录] {datetime.now().strftime('%H:%M:%S')}")
         print(f"类型: {event_type}")
@@ -128,6 +179,11 @@ def handle_webhook():
             
         if from_list and to_list:
             print(f"流转: {from_list} ➡️  {to_list}")
+        
+        if should_push:
+            print(f"📤 已推送到企业微信")
+        else:
+            print(f"⏭️ 未推送 (不在白名单)")
 
         return jsonify({"status": "success"}), 200
 
