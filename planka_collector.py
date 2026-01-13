@@ -129,10 +129,10 @@ def handle_webhook():
         if should_push and WECOM_WEBHOOK:
             import requests
             
-            # 翻译事件类型
+            # 翻译事件类型 (使用更专业的图标)
             type_cn = {
-                'Card Moved': '📋 卡片移动',
-                'Card Created': '✨ 卡片创建',
+                'Card Moved': '🔄 卡片流转',
+                'Card Created': '📌 新建卡片',
                 'New Comment': '💬 新评论',
                 'You Were Added to Card': '👤 被添加到卡片'
             }.get(event_type, event_type)
@@ -156,12 +156,10 @@ def handle_webhook():
 > **看板:** {board_name}'''
             
             # 如果有卡片链接，添加链接
-            raw = json.loads(json.dumps(data))
-            if 'message' in raw:
-                import re as regex
-                link_match = regex.search(r'\((https?://[^)]+)\)', raw.get('message', ''))
+            if 'message' in data:
+                link_match = re.search(r'\((https?://[^)]+)\)', data.get('message', ''))
                 if link_match:
-                    content += f'\n\n[🔗 点击查看卡片]({link_match.group(1)})'
+                    content += f'\n\n[📎 点击查看详情]({link_match.group(1)})'
             
             # 发送到企业微信
             try:
