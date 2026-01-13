@@ -148,6 +148,85 @@ def list_events():
     conn.close()
     return jsonify([dict(row) for row in rows])
 
+@app.route('/download', methods=['GET'])
+def download_excel():
+    """下载全部数据为 Excel 文件"""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill
+    from io import BytesIO
+    from flask import send_file
+    
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM events ORDER BY received_at DESC')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # 创建工作簿
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Planka Events"
+    
+    # 定义表头 (用户需要的字段 + 额外有用的字段)
+    headers = [
+        'ID', 
+        '时间', 
+        '类型', 
+        '卡片名', 
+        'Card ID', 
+        '操作人', 
+        '看板', 
+        '流转前列表', 
+        '流转后列表',
+        '原始消息'  # 保留完整消息，方便排查
+    ]
+    
+    # 写入表头并设置样式
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center')
+    
+    # 写入数据
+    for row_idx, row in enumerate(rows, 2):
+        data = dict(row)
+        # 提取原始消息中的 message 字段
+        raw = json.loads(data.get('raw_data', '{}'))
+        original_message = raw.get('message', '')
+        
+        ws.cell(row=row_idx, column=1, value=data.get('id'))
+        ws.cell(row=row_idx, column=2, value=data.get('received_at'))
+        ws.cell(row=row_idx, column=3, value=data.get('event_type'))
+        ws.cell(row=row_idx, column=4, value=data.get('item_name'))
+        ws.cell(row=row_idx, column=5, value=data.get('card_id'))
+        ws.cell(row=row_idx, column=6, value=data.get('user_name'))
+        ws.cell(row=row_idx, column=7, value=data.get('board_name'))
+        ws.cell(row=row_idx, column=8, value=data.get('from_list'))
+        ws.cell(row=row_idx, column=9, value=data.get('to_list'))
+        ws.cell(row=row_idx, column=10, value=original_message)
+    
+    # 调整列宽
+    column_widths = [6, 20, 15, 30, 25, 15, 15, 15, 15, 50]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[chr(64 + i)].width = width
+    
+    # 保存到内存并返回
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    filename = f"planka_events_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )
+
 if __name__ == '__main__':
     init_db()
     # 允许通过环境变量设置端口，方便云端部署
