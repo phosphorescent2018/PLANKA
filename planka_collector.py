@@ -121,7 +121,7 @@ def handle_webhook():
         # 配置区: 每个看板对应自己的群机器人
         BOARD_WEBHOOKS = {
             'EP': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=04113332-f1c3-482b-9cd3-83ba7d5e99ef',
-            'MTN': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=99e5fbfc-e738-409c-b855-38907de945e3',
+            'MTN': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=36aca1b1-c029-453a-8d9f-8865bb11b93e',
         }
         ALLOWED_TYPES = ['Card Moved', 'Card Created']  # 只推送这些类型
         
