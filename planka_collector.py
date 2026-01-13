@@ -137,18 +137,23 @@ def handle_webhook():
                 'You Were Added to Card': '👤 被添加到卡片'
             }.get(event_type, event_type)
             
-            # 构建 Markdown 消息
+            # 获取当前时间
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # 构建 Markdown 消息 (标题加粗)
             if event_type == 'Card Moved':
                 content = f'''{type_cn}
-> 卡片: <font color="info">{item_name}</font>
-> 操作人: {user_name}
-> 看板: {board_name}
-> 流转: <font color="warning">{from_list} → {to_list}</font>'''
+> **时间:** {current_time}
+> **卡片:** <font color="info">{item_name}</font>
+> **操作人:** {user_name}
+> **看板:** {board_name}
+> **流转:** <font color="warning">{from_list} → {to_list}</font>'''
             else:
                 content = f'''{type_cn}
-> 卡片: <font color="info">{item_name}</font>
-> 操作人: {user_name}
-> 看板: {board_name}'''
+> **时间:** {current_time}
+> **卡片:** <font color="info">{item_name}</font>
+> **操作人:** {user_name}
+> **看板:** {board_name}'''
             
             # 如果有卡片链接，添加链接
             raw = json.loads(json.dumps(data))
