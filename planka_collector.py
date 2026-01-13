@@ -140,20 +140,18 @@ def handle_webhook():
             # 获取当前时间
             current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
-            # 构建 Markdown 消息 (标题加粗)
+            # 构建 Markdown 消息 (方案D: 紧凑布局)
             if event_type == 'Card Moved':
                 content = f'''{type_cn}
-> **时间:** {current_time}
-> **卡片:** <font color="info">{item_name}</font>
-> **操作人:** {user_name}
-> **看板:** {board_name}
-> **流转:** <font color="warning">{from_list} → {to_list}</font>'''
+**时间:** {current_time}
+**卡片:** <font color="info">{item_name}</font>
+**操作人:** {user_name} | **看板:** {board_name}
+**流转:** <font color="warning">{from_list} → {to_list}</font>'''
             else:
                 content = f'''{type_cn}
-> **时间:** {current_time}
-> **卡片:** <font color="info">{item_name}</font>
-> **操作人:** {user_name}
-> **看板:** {board_name}'''
+**时间:** {current_time}
+**卡片:** <font color="info">{item_name}</font>
+**操作人:** {user_name} | **看板:** {board_name}'''
             
             # 如果有卡片链接，添加链接
             if 'message' in data:
